@@ -1,0 +1,22 @@
+{
+  "entities": {
+    "Stats": {
+      "title": "Stats",
+      "description": "Global application statistics.",
+      "type": "object",
+      "properties": {
+        "visitors": {
+          "type": "number",
+          "description": "Total number of unique visitors."
+        }
+      },
+      "required": ["visitors"]
+    }
+  },
+  "firestore": {
+    "/stats/global": {
+      "schema": { "$ref": "Stats" },
+      "description": "Global statistics document."
+    }
+  }
+}

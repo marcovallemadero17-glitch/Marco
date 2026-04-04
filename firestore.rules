@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: stats
+    // Document ID: global
+    // Fields:
+    //   - visitors: number (required, positive) - Total number of unique visitors.
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isPositive(field) {
+      return request.resource.data[field] is number && request.resource.data[field] >= 0;
+    }
+
+    function isValidStats(data) {
+      return hasRequiredFields(['visitors']) &&
+             isPositive('visitors') &&
+             request.resource.data.keys().hasOnly(['visitors']);
+    }
+
+    match /stats/global {
+      // Allow anyone to read the global stats
+      allow read: if true;
+      
+      // Allow authenticated users to increment the visitor count
+      allow create: if isAuthenticated() && isValidStats(request.resource.data);
+      allow update: if isAuthenticated() && isValidStats(request.resource.data) &&
+                      request.resource.data.visitors == resource.data.visitors + 1;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
